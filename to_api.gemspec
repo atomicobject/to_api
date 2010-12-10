@@ -23,7 +23,8 @@ Gem::Specification.new do |s|
     "VERSION",
     "lib/to_api.rb",
     "spec/spec_helper.rb",
-    "spec/to_api_spec.rb"
+    "spec/to_api_spec.rb",
+    "to_api.gemspec"
   ]
   s.homepage = %q{http://github.com/atomicobject/to_api}
   s.require_paths = ["lib"]
