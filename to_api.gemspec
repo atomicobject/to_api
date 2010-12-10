@@ -16,6 +16,7 @@ Gem::Specification.new do |s|
   s.test_files = Dir['{spec,test}/**/*.rb']
 
   s.add_dependency "activerecord", [">= 2.3", "< 3"]
-  s.add_development_dependency "rspec", "= 1.3.1"  
+  s.add_development_dependency "rspec", "= 1.3.1"
+  s.add_development_dependency "rake", ">= 0.8.7"
 end
 

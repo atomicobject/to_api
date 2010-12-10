@@ -9,3 +9,4 @@ tmp
 tags
 .bundle
 vendor/bundler
+.rvmrc
