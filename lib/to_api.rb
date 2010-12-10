@@ -82,3 +82,9 @@ class Symbol
     to_s
   end
 end
+
+class NilClass
+  def to_api
+    self
+  end
+end

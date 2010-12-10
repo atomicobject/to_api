@@ -127,6 +127,12 @@ describe '#to_api' do
       [a].to_api(['bar']).should == [:apiz]
     end
   end
+  
+  describe nil do
+    it "returns nil" do
+      nil.to_api.should be_nil
+    end
+  end
 
   describe ActiveRecord::Base do
 
