@@ -14,7 +14,6 @@ begin
     gem.authors = ["Shawn Anderson","Ryan Fogle"]
     gem.add_development_dependency "rspec"
     gem.add_development_dependency "jeweler"
-    gem.add_dependency 'activerecord'
     gem.test_files = FileList['{spec,test}/**/*.rb']
     # gem is a Gem::Specification... see http://www.rubygems.org/read/chapter/20 for additional settings
   end
