@@ -14,20 +14,19 @@ rescue LoadError
 end
 
 namespace :gem do
-  def version_name
-    "to_api-#{eval(File.read('to_api.gemspec')).version}"
+  def gem_name
+    "to_api-#{eval(File.read('to_api.gemspec')).version}.gem"
   end
 
   desc "Build the gem"
   task :build do
     mkdir_p "pkg", :verbose => false
-    sh "gem build to_api.gemspec && mv #{version_name}.gem pkg"
+    sh "gem build to_api.gemspec && mv #{gem_name} pkg"
   end
   
   desc "Release the gem"
   task :release => :build do
-    gemspec = eval(File.read('to_api.gemspec'))
-    sh "gem push pkg/#{version_name}.gemspec"
+    sh "gem push pkg/#{gem_name}"
   end
 end
 
