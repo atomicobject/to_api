@@ -16,7 +16,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  activerecord (= 2.3.5)
+  activerecord (>= 2.3, < 3)
   jeweler
   rake
   rspec (= 1.3.0)
