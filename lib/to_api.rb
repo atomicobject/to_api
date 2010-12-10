@@ -1,8 +1,10 @@
+require 'active_record'
+
 class ActiveRecord::Base
   def to_api(*includes) #assumes all attribute types are fine
     hash = {}
     valid_includes = (self.class.reflect_on_all_associations.map(&:name).map(&:to_s) | self.valid_api_includes)
-    
+  
     include_hash = {}
     includes.each do |i| 
       if i.kind_of?(Hash)
@@ -13,9 +15,9 @@ class ActiveRecord::Base
         include_hash[i] = []
       end
     end
-    
+  
     include_hash.delete_if{|k,v| !valid_includes.include?(k)}
-    
+  
     attributes.each do |k, v|
       attribute_includes = include_hash[k] || []
       v = v.to_api(*attribute_includes) if v.respond_to?(:to_api)
@@ -27,24 +29,24 @@ class ActiveRecord::Base
       api_obj = self.send(relation)
       hash[relation.to_s] = api_obj.respond_to?(:to_api) ? api_obj.to_api(*relation_includes) : api_obj
     end
-    
+  
     hash
   end
-  
+
   # override in models
   def valid_api_includes
     []
   end
 end
 
-module Enumerable
+#Sadly, Scope isn't enumerable
+class ActiveRecord::NamedScope::Scope
   def to_api(*includes)
     map{|e|e.to_api(*includes)}
   end
 end
 
-#Sadly, Scope isn't enumerable
-class ActiveRecord::NamedScope::Scope
+module Enumerable
   def to_api(*includes)
     map{|e|e.to_api(*includes)}
   end

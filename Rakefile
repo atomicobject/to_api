@@ -10,7 +10,7 @@ begin
   task :default => :spec
 
 rescue LoadError
-  puts "RSpec (or a dependency) not available. Install it with: gem install rspec"
+  puts "RSpec (or a dependency) not available. Run: bundle install"
 end
 
 namespace :gem do

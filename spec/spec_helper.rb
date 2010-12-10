@@ -1,4 +1,4 @@
-require 'rubygems'
-require 'bundler/setup'
-require 'active_record'
-require File.join(File.dirname(__FILE__), "..", "lib", 'to_api')
+require "rubygems"
+require "bundler/setup"
+require 'spec'
+require 'to_api'
