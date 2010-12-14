@@ -2,7 +2,6 @@ PATH
   remote: .
   specs:
     to_api (1.0.3)
-      activerecord (>= 2.3, < 3)
 
 GEM
   remote: http://rubygems.org/
