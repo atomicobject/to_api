@@ -131,6 +131,7 @@ describe '#to_api' do
   describe nil do
     it "returns nil" do
       nil.to_api.should be_nil
+      nil.to_api("args","not","used").should be_nil
     end
   end
 
