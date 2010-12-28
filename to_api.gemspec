@@ -12,7 +12,7 @@ Gem::Specification.new do |s|
   s.rubyforge_project = %q{to_api}
   s.rubygems_version = %q{1.3.7}
   s.summary = %q{Helper for simplifying JSON api creation}
-  s.files = Dir["{bin,lib}/**/*.rb"] + %w(README)
+  s.files = Dir["{bin,lib}/**/*.rb"] + %w(README.md)
   s.test_files = Dir['{spec,test}/**/*.rb']
 
   s.add_development_dependency "activerecord", [">= 2.3", "< 3"]
