@@ -8,14 +8,14 @@ if Object.const_defined? :ActiveRecord
       includes.each do |i| 
         if i.kind_of?(Hash)
           i.each do |k,v|
-            include_hash[k] = v
+            include_hash[k.to_s] = v
           end
         else
-          include_hash[i] = []
+          include_hash[i.to_s] = []
         end
       end
     
-      include_hash.delete_if{|k,v| !valid_includes.include?(k)}
+      include_hash.delete_if{|k,v| !valid_includes.include?(k.to_s)}
     
       attributes.each do |k, v|
         attribute_includes = include_hash[k] || []

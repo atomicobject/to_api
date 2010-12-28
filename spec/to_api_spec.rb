@@ -159,6 +159,10 @@ describe '#to_api' do
         @base.to_api("foopy_pantz")["foopy_pantz"].should == "pantz of foop"
       end
       
+      it "allows symbols" do
+        @base.to_api(:foopy_pantz)["foopy_pantz"].should == "pantz of foop"
+      end
+      
       it "ignores non association includes" do
         @base.stub!(:yarg => "YYYYARRGG")
         @base.to_api("yarg")["yarg"].should be_nil
@@ -205,7 +209,13 @@ describe '#to_api' do
           @base.should_receive(:other_relation).and_return(@other_child)
           @base.to_api({"fake_child_records" => "foopy_pantz"}, "other_relation").should == {"fake_child_records" => [{}], "other_relation" => {"foo"=>"bar"}}
         end
-        
+
+        it "takes array with subhash as symbols" do
+          @child.should_receive(:to_api).with(:foopy_pantz).and_return({})
+          @base.should_receive(:other_relation).and_return(@other_child)
+          @base.to_api({:fake_child_records => :foopy_pantz}, :other_relation).should == {"fake_child_records" => [{}], "other_relation" => {"foo"=>"bar"}}
+        end        
+
         it "takes array with singles and subhashes" do
           @child.should_receive(:to_api).with("foopy_pantz").and_return({})
           @base.to_api("fake_child_records" => "foopy_pantz").should == {"fake_child_records" => [{}]}
