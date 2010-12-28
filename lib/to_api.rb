@@ -86,7 +86,7 @@ class Symbol
 end
 
 class NilClass
-  def to_api
+  def to_api(*includes)
     self
   end
 end
