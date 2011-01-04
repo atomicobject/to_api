@@ -70,6 +70,18 @@ class DateTime
   end
 end
 
+class Date
+  def to_api(*includes)
+    to_s(:db)
+  end
+end
+
+class Time
+  def to_api(*includes)
+    to_s(:db)
+  end
+end
+
 class Hash
   def to_api(*includes)
     inject({}) do |memo, (k, v)| 

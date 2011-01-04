@@ -83,6 +83,28 @@ describe '#to_api' do
     end
   end
 
+  describe Date do 
+    it "returns db string for date" do
+      now = Date.parse("2001-11-28")
+      now.to_api.should == "2001-11-28"
+    end
+    describe "ignoring includes" do
+      let(:instance){ Date.today }
+      it_should_behave_like "ignoring includes"
+    end
+  end
+
+  describe Time do
+    it "returns db string for time" do
+      now = Time.parse("2001-11-28 04:01:59")
+      now.to_api.should == "2001-11-28 04:01:59"
+    end
+    describe "ingoring includes" do
+      let(:instance) { Time.now }
+      it_should_behave_like "ignoring includes"
+    end
+  end
+
   describe Enumerable do
     class Enumz
       attr_accessor :kid
