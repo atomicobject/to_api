@@ -34,7 +34,7 @@ Now just call your to\_api method. You'll get back a hash of arrays, hashes, str
     
 ### If I have to implement to\_api, what does the gem do for me?
 
-The gem provides to\_api for common ruby classes, allowing simple conversion to json, xml, yaml, etc. Hash and Enumerable transform all their contents, allowing your data objects to simply call to\_api on a hash of relevant attributes.
+The gem provides to\_api for common Ruby classes, allowing simple conversion to json, xml, yaml, etc. Hash and Enumerable transform all their contents, allowing your data objects to simply call to\_api on a hash of relevant attributes.
 
 Fixnum, String, DateTime, Symbol, and NilClass are also provided.
 
@@ -47,3 +47,11 @@ If ActiveRecord is present, ActiveRecord::Base#to\_api transforms and returns th
 ### What if I need support for other common classes?
 
 For most classes, it only takes a couple specs and a few lines of code. Send a pull request; we'd love to take your additions.
+
+Authors
+=======
+
+* Ryan Fogle (fogle@atomicobject.com)
+* Shawn Anderson (shawn.anderson@atomicobject.com)
+* © 2011 [Atomic Object](http://www.atomicobject.com/)
+* More Atomic Object [open source](http://www.atomicobject.com/pages/Software+Commons) projects
