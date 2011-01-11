@@ -7,6 +7,9 @@ class FakeRecord < ActiveRecord::Base
   named_scope :scopez, :conditions => '1=1'
 end
 
+class OtherFakeRecord < FakeRecord
+end
+
 class FakeChildRecord < FakeRecord
 end
 
@@ -163,6 +166,17 @@ describe '#to_api' do
       before do
         @base = FakeRecord.new
         @base.stub!(:attributes => {"age" => mock(:to_api => :apid_age)})
+      end
+
+      it "includes the to_api'd attributes" do
+        @base.to_api["age"].should == :apid_age
+      end
+    end
+
+    describe "with to_api_attributes" do
+      before do
+        @base = OtherFakeRecord.new
+        @base.stub!(:to_api_attributes => {"age" => mock(:to_api => :apid_age)})
       end
 
       it "includes the to_api'd attributes" do

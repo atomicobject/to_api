@@ -17,7 +17,7 @@ if Object.const_defined? :ActiveRecord
     
       include_hash.delete_if{|k,v| !valid_includes.include?(k.to_s)}
     
-      attributes.each do |k, v|
+      to_api_attributes.each do |k, v|
         attribute_includes = include_hash[k] || []
         v = v.to_api(*attribute_includes) if v.respond_to?(:to_api)
         hash[k] = v
@@ -35,6 +35,10 @@ if Object.const_defined? :ActiveRecord
     # override in models
     def valid_api_includes
       []
+    end
+
+    def to_api_attributes
+      attributes
     end
   end
 
