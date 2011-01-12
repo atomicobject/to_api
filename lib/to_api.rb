@@ -19,7 +19,7 @@ if Object.const_defined? :ActiveRecord
     
       to_api_attributes.each do |k, v|
         attribute_includes = include_hash[k] || []
-        v = v.to_api(*attribute_includes) if v.respond_to?(:to_api)
+        v = v.to_api(*attribute_includes) 
         hash[k] = v
       end
 
@@ -70,19 +70,19 @@ end
 
 class DateTime
   def to_api(*includes)
-    to_s(:db)
+    self
   end
 end
 
 class Date
   def to_api(*includes)
-    to_s(:db)
+    self
   end
 end
 
 class Time
   def to_api(*includes)
-    to_s(:db)
+    self
   end
 end
 

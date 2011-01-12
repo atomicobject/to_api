@@ -76,9 +76,9 @@ describe '#to_api' do
   end
 
   describe DateTime do
-    it "returns db string for date time" do
-      now = DateTime.parse("2001-11-28 04:01:59")
-      now.to_api.should == "2001-11-28 04:01:59"
+    it "returns self" do
+      now = DateTime.now
+      now.to_api.should == now
     end
     describe "ingoring includes" do
       let(:instance) { DateTime.now }
@@ -87,9 +87,9 @@ describe '#to_api' do
   end
 
   describe Date do 
-    it "returns db string for date" do
-      now = Date.parse("2001-11-28")
-      now.to_api.should == "2001-11-28"
+    it "returns self" do
+      now = Date.today
+      now.to_api.should == now
     end
     describe "ignoring includes" do
       let(:instance){ Date.today }
@@ -98,9 +98,9 @@ describe '#to_api' do
   end
 
   describe Time do
-    it "returns db string for time" do
-      now = Time.parse("2001-11-28 04:01:59")
-      now.to_api.should == "2001-11-28 04:01:59"
+    it "returns self" do
+      now = Time.now
+      now.to_api.should == now
     end
     describe "ingoring includes" do
       let(:instance) { Time.now }
