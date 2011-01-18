@@ -8,6 +8,8 @@ class FakeRecord < ActiveRecord::Base
 end
 
 class OtherFakeRecord < FakeRecord
+  def attributes;{"my_field"=>''};end
+  def my_field;'yar';end
 end
 
 class FakeChildRecord < FakeRecord
@@ -35,8 +37,8 @@ describe '#to_api' do
 
     it "passes on includes" do
       a = "a"
-      a.should_receive(:to_api).with(['bar']).and_return(:apiz)
-      {:one => a}.to_api(['bar']).should == {:one => :apiz}
+      a.should_receive(:to_api).with('bar').and_return(:apiz)
+      {:one => a}.to_api(:one => ['bar']).should == {:one => :apiz}
     end
   end
 
@@ -108,22 +110,6 @@ describe '#to_api' do
     end
   end
 
-  describe Enumerable do
-    class Enumz
-      attr_accessor :kid
-      include Enumerable
-      def each
-        yield @kid
-      end
-    end
-    it "returns to_api of its kids" do
-      e = Enumz.new
-      e.kid = "a"
-      e.kid.should_receive(:to_api).and_return(:apiz)
-      [e.kid].to_api.should == [:apiz]
-    end
-  end
-
   describe ActiveRecord::NamedScope::Scope do
     it "returns to_api of its kids" do
       FakeRecord.should_receive(:reflect_on_all_associations).and_return([mock(:name => "fake_child_records")])
@@ -181,6 +167,10 @@ describe '#to_api' do
 
       it "includes the to_api'd attributes" do
         @base.to_api["age"].should == :apid_age
+      end
+
+      it "allows the inclusion of attributes" do
+        @base.to_api("my_field")["my_field"].should == 'yar'
       end
     end
 
@@ -258,8 +248,84 @@ describe '#to_api' do
           @base.to_api("fake_child_records" => "foopy_pantz").should == {"fake_child_records" => [{}]}
         end
       end
+
+      describe "#add_to_api_filter" do
+        it "adds a filter" do
+          @base = OtherFakeRecord.new
+          @base.should_not_receive(:my_field)
+          @base.add_to_api_filter("my_field") do |parent, child_includes|
+            "YO-HO-HO"
+          end
+
+          @base.to_api("my_field")["my_field"].should == "YO-HO-HO"
+        end
+
+        it "sends filter to child" do
+          FakeRecord.stub!(:reflect_on_all_associations => [mock(:name => "kids")])
+          FakeChildRecord.stub!(:reflect_on_all_associations => [mock(:name => "foopy_pantz")])
+
+          @base = FakeRecord.new
+          @base.stub!(:attributes => {})
+
+          @child = FakeChildRecord.new
+
+          @child.stub!(:foopy_pantz => "pantz of foop")
+          
+          @base.should_receive(:kids).and_return([@child])
+
+          @base.add_to_api_filter("foopy_pantz") do |parent, child_includes|
+            "kachaa"
+          end
+
+          @base.to_api("kids" => "foopy_pantz").should == {"kids" => [{"foopy_pantz" => "kachaa"}]}
+        end
+      end
+    end
+  end
+
+  describe "#add_to_api_filter" do
+    before do
+      @subhash = {:b => :c, :d => :e}
+      @hash = {:a => @subhash}
     end
 
+    it "puts blocks return value in for filtered key" do
+      @hash.add_to_api_filter("count") do |parent, child_includes|
+        @hash.count
+      end
+
+      @hash.to_api("count")["count"].should == 1
+    end
+
+    it "nests hashes with filters" do
+      @hash.add_to_api_filter("id") do |parent, child_includes|
+        parent.object_id
+      end
+
+      api_object = @hash.to_api({"id" => "", :a => "id"})
+      api_object["id"].should == @hash.object_id
+      api_object[:a]["id"].should == @subhash.object_id
+    end
+
+    it "nests hashes of hashes with filters" do
+      @hash.add_to_api_filter("id") do |parent, child_includes|
+        parent.object_id
+      end
+
+      api_object = @hash.to_api({"id" => "", :a => {"id" => ""}})
+      api_object["id"].should == @hash.object_id
+      api_object[:a]["id"].should == @subhash.object_id
+    end
+
+    it "nests hashes with filters with hash params" do
+      @hash.add_to_api_filter("id") do |parent, child_includes|
+        parent.object_id
+      end
+
+      api_object = @hash.to_api(:a => "id")
+      api_object["id"].should be_nil
+      api_object[:a]["id"].should == @subhash.object_id
+    end
   end
 end
 
