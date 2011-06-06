@@ -3,7 +3,7 @@ module ToApiSelf
     self
   end
 end
-[ Fixnum, String, DateTime, Date, Time, NilClass ].each do |klass|
+[ Fixnum, String, DateTime, Date, Time, NilClass, TrueClass, FalseClass ].each do |klass|
   klass.send(:include, ToApiSelf)
 end
 
