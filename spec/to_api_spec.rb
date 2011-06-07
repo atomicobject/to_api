@@ -110,6 +110,26 @@ describe '#to_api' do
     end
   end
 
+  describe TrueClass do
+    it "returns self" do
+      true.to_api.should == true
+    end
+    describe "ingoring includes" do
+      let(:instance) { true }
+      it_should_behave_like "ignoring includes"
+    end
+  end
+
+  describe FalseClass do
+    it "returns self" do
+      false.to_api.should == false
+    end
+    describe "ingoring includes" do
+      let(:instance) { false }
+      it_should_behave_like "ignoring includes"
+    end
+  end
+
   describe ActiveRecord::NamedScope::Scope do
     it "returns to_api of its kids" do
       FakeRecord.should_receive(:reflect_on_all_associations).and_return([mock(:name => "fake_child_records")])
