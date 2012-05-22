@@ -63,7 +63,18 @@ describe '#to_api' do
       let(:instance) { 8 }
       it_should_behave_like "ignoring includes"
     end
+  end
 
+  describe Float do
+    it "returns self" do
+      foo = 5.5
+      foo.to_api.should == foo
+    end
+
+    describe "ignoring includes" do
+      let(:instance) { 5.5 }
+      it_should_behave_like "ignoring includes"
+    end
   end
 
   describe Symbol do
