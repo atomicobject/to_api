@@ -27,10 +27,14 @@ class AssociatedRecord < ActiveRecord::Base
 end
 
 class OtherRecord < ActiveRecord::Base
+  attr_accessor :foo
+
+  def to_api_attributes
+    attributes.merge("foo" => foo)
+  end
 end
 
 class Category < ActiveRecord::Base
-
 end
 
 describe '#to_api' do
@@ -57,6 +61,16 @@ describe '#to_api' do
       a = "a"
       a.should_receive(:to_api).with('bar').and_return(:apiz)
       {:one => a}.to_api(:one => ['bar']).should == {:one => :apiz}
+    end
+
+    it "can have frozen stuff inside it" do
+      hash = {
+        :key => {:foo => "bar"}
+      }
+      hash[:key].freeze
+      hash.freeze
+
+      hash.to_api.should == {:key => {:foo => "bar"}}.to_api
     end
   end
 
@@ -182,6 +196,13 @@ describe '#to_api' do
       a.should_receive(:to_api).with(['bar']).and_return(:apiz)
       [a].to_api(['bar']).should == [:apiz]
     end
+
+    it "can be frozen" do
+      a = [["foo"], ["bar"]]
+      a.each { |e| e.freeze }
+      a.freeze
+      a.to_api.should == [["foo"], ["bar"]].to_api
+    end
   end
 
   describe nil do
@@ -252,6 +273,28 @@ describe '#to_api' do
 
         # 'group' is not listed in valid_api_includes, so it won't be included even when requested
         @base.to_api("group")["group"].should be_nil
+      end
+
+      it "can handle frozen attributes" do
+        obj = OtherRecord.new
+        obj.foo = ["bar"]
+        obj.to_api["foo"].should == ["bar"]
+
+        obj.freeze
+        obj.foo.freeze
+        obj.to_api["foo"].should == ["bar"]
+      end
+
+      it "can handle frozen associations" do
+        obj = ChildRecord.new(:name => "a child")
+        category = Category.new(:name => "cat 1")
+        obj.category = category
+
+        obj.to_api("category")["category"].should == category.to_api
+
+        obj.freeze
+        category.freeze
+        obj.to_api("category")["category"].should == category.to_api
       end
 
       describe "versions of params" do

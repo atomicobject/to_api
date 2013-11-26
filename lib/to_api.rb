@@ -62,7 +62,7 @@ if Object.const_defined? :ActiveRecord
       include_hash.delete_if{|k,v| !valid_includes.include?(k.to_s)}
       to_api_attributes.each do |k, v|
         unless hash[k]
-          v.to_api_filters = to_api_filters if v.respond_to? :to_api_filters
+          v.to_api_filters = to_api_filters if to_api_filters.any? && v.respond_to?(:to_api_filters)
 
           attribute_includes = include_hash[k] || []
           to_api_v = v.to_api(*[attribute_includes].flatten.compact)
@@ -74,7 +74,7 @@ if Object.const_defined? :ActiveRecord
         unless hash[relation]
           relation_includes = include_hash[relation] || []
           api_obj = self.send(relation)
-          api_obj.to_api_filters = to_api_filters if api_obj.respond_to? :to_api_filters
+          api_obj.to_api_filters = to_api_filters if api_obj.respond_to?(:to_api_filters)
 
           hash[relation.to_s] = api_obj.respond_to?(:to_api) ? api_obj.to_api(*[relation_includes].flatten.compact) : api_obj
         end
@@ -115,7 +115,8 @@ if Object.const_defined? :ActiveRecord
       include ToApiFilter
       def to_api(*includes)
         map{|e|
-          e.to_api_filters = to_api_filters if e.respond_to? :to_api_filters
+          e.to_api_filters = to_api_filters if to_api_filters.any? && e.respond_to?(:to_api_filters)
+          e.to_api_filters = to_api_filters if e.respond_to?(:to_api_filters)
           e.to_api(*includes)
         }
       end
@@ -127,7 +128,7 @@ class Array
   include ToApiFilter
   def to_api(*includes)
     map{|e|
-      e.to_api_filters = to_api_filters if e.respond_to? :to_api_filters
+      e.to_api_filters = to_api_filters if to_api_filters.any? && e.respond_to?(:to_api_filters)
 
       e.to_api(*includes)
     }
@@ -151,7 +152,7 @@ class Hash
 
     (keys-values.keys).each do |k|
       val = self[k]
-      val.to_api_filters = to_api_filters if val.respond_to? :to_api_filters
+      val.to_api_filters = to_api_filters if to_api_filters.any? && val.respond_to?(:to_api_filters)
       child_includes = include_hash[k] || []
       values[k] = val.to_api(*[child_includes].flatten.compact)
     end
