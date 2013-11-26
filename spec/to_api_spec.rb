@@ -1,18 +1,36 @@
 require 'spec_helper'
 
 class FakeRecord < ActiveRecord::Base
-  def attributes;{};end
-  def attributes_from_column_definition;[];end
-  def self.columns_hash;{};end
-  named_scope :scopez, :conditions => '1=1'
+  belongs_to :associated_record
+  belongs_to :other_record
+  belongs_to :group
+  has_many :child_records
+
+  if respond_to?(:named_scope)
+    named_scope :scopez, :conditions => '1=1'
+  else
+    scope :scopez, :conditions => '1=1'
+  end
+
+  attr_accessor :yarg
+
+  def valid_api_includes
+    [:associated_record, :other_record]
+  end
 end
 
-class OtherFakeRecord < FakeRecord
-  def attributes;{"my_field"=>''};end
-  def my_field;'yar';end
+class ChildRecord < ActiveRecord::Base
+  belongs_to :category
 end
 
-class FakeChildRecord < FakeRecord
+class AssociatedRecord < ActiveRecord::Base
+end
+
+class OtherRecord < ActiveRecord::Base
+end
+
+class Category < ActiveRecord::Base
+
 end
 
 describe '#to_api' do
@@ -25,8 +43,8 @@ describe '#to_api' do
   describe Hash do
 
     it "returns a new hash with all values to_api'ed" do
-      obj1 = stub('1', :to_api => "1 to api")
-      obj2 = mock('2', :to_api => "2 to the api")
+      obj1 = double('1', :to_api => "1 to api")
+      obj2 = double('2', :to_api => "2 to the api")
 
       hash = {:one => obj1, :two => obj2}
       hash.to_api.should == {
@@ -99,7 +117,7 @@ describe '#to_api' do
     end
   end
 
-  describe Date do 
+  describe Date do
     it "returns self" do
       now = Date.today
       now.to_api.should == now
@@ -141,14 +159,10 @@ describe '#to_api' do
     end
   end
 
-  describe ActiveRecord::NamedScope::Scope do
-    it "returns to_api of its kids" do
-      FakeRecord.should_receive(:reflect_on_all_associations).and_return([mock(:name => "fake_child_records")])
-      @base = FakeRecord.new
-      @base.should_receive(:fake_child_records).and_return([{"foo" => "bar"}])
-
-      FakeRecord.stub!(:find_every => [@base])
-      FakeRecord.scopez.to_api("fake_child_records").should == [{"fake_child_records" => [{"foo" => "bar"}]}]
+  describe 'named scopes' do
+    it "returns to_api of the matching records" do
+      @base = FakeRecord.create(my_field: "Some Value")
+      FakeRecord.scopez.to_api.should == [@base.to_api]
     end
   end
 
@@ -169,7 +183,7 @@ describe '#to_api' do
       [a].to_api(['bar']).should == [:apiz]
     end
   end
-  
+
   describe nil do
     it "returns nil" do
       nil.to_api.should be_nil
@@ -182,22 +196,26 @@ describe '#to_api' do
     describe "with attributes" do
       before do
         @base = FakeRecord.new
-        @base.stub!(:attributes => {"age" => mock(:to_api => :apid_age)})
+        @base.age = 95
+        @base.my_field = "why yes"
       end
 
       it "includes the to_api'd attributes" do
-        @base.to_api["age"].should == :apid_age
+        result = @base.to_api
+        result["age"].should == 95
+        result["my_field"].should == "why yes"
       end
     end
 
     describe "with to_api_attributes" do
       before do
-        @base = OtherFakeRecord.new
-        @base.stub!(:to_api_attributes => {"age" => mock(:to_api => :apid_age)})
+        @base = FakeRecord.new
+        @base.age = 65
+        @base.my_field = "yar"
       end
 
       it "includes the to_api'd attributes" do
-        @base.to_api["age"].should == :apid_age
+        @base.to_api["age"].should == 65
       end
 
       it "allows the inclusion of attributes" do
@@ -207,83 +225,79 @@ describe '#to_api' do
 
     describe "with includes" do
       before do
-        @base = FakeRecord.new
-        @base.stub!(:attributes => {})
-        FakeRecord.stub!(:reflect_on_all_associations => [mock(:name => "foopy_pantz")])
-        @base.stub!(:foopy_pantz => "pantz of foop")
+        @base = FakeRecord.new(:my_field => "some value")
+        @base.save!
+        @associated_record = @base.create_associated_record("name" => "Joe")
       end
 
       it "includes the to_api'd attributes" do
-        @base.to_api("foopy_pantz")["foopy_pantz"].should == "pantz of foop"
+        # Without specifying an include the associated_record is not automatically included
+        @base.to_api["associated_record"].should be_nil
+
+        # But specify the association and it gets pulled in
+        @base.to_api("associated_record")["associated_record"]["name"].should == "Joe"
       end
-      
+
       it "allows symbols" do
-        @base.to_api(:foopy_pantz)["foopy_pantz"].should == "pantz of foop"
+        @base.to_api(:associated_record)["associated_record"]["name"].should == "Joe"
       end
-      
+
       it "ignores non association includes" do
-        @base.stub!(:yarg => "YYYYARRGG")
+        @base.yarg = "YYYYARRGG"
         @base.to_api("yarg")["yarg"].should be_nil
       end
-      
+
       it "allows for explicitly declaring allowable includes" do
-        @base.stub!(:foo => "FOO")
-        @base.stub!(:valid_api_includes => ["foo"])
-        @base.to_api("foo")["foo"].should == "FOO"
+        @base.to_api("associated_record")["associated_record"]["name"].should == "Joe"
+
+        # 'group' is not listed in valid_api_includes, so it won't be included even when requested
+        @base.to_api("group")["group"].should be_nil
       end
-      
+
       describe "versions of params" do
-      
+
         before do
-          FakeChildRecord.stub!(:reflect_on_all_associations => [mock(:name => "foopy_pantz")])
-          @child = FakeChildRecord.new
-          @child.stub!(:foopy_pantz => "pantz of foop")
-  
-          FakeRecord.should_receive(:reflect_on_all_associations).and_return([mock(:name => "fake_child_records"), mock(:name => "other_relation")])  
-          @base = FakeRecord.new
-          
-          @base.should_receive(:fake_child_records).and_return([@child])
-          @other_child = mock(:to_api => {"foo"=>"bar"})
+          @base = FakeRecord.create
+          @child = @base.child_records.create(:name => "Jane")
+          @child_category = @child.create_category(:name => "Child Category")
+          @other_record = @base.create_other_record(:description => "Some Other Record")
         end
-        
+
         it "only passes includes to the correct objects" do
-          @child.should_receive(:to_api).with().and_return({})
-          @base.to_api("fake_child_records","foopy_pantz").should == {"fake_child_records" => [{}]}
+          @base.to_api("child_records", "foo_records")["child_records"].should == [@child.to_api]
         end
-        
-        
+
         it "takes a single arg" do
-          @child.should_receive(:to_api).with().and_return({})
-          @base.to_api("fake_child_records").should == {"fake_child_records" => [{}]}
+          result = @base.to_api("child_records")
+          result["child_records"].should == [@child.to_api]
+          result["child_records"].first["category"].should be_nil
+          result["other_record"].should be_nil
         end
-        
+
         it "takes array with singles" do
-          @child.should_receive(:to_api).with().and_return({})
-          @base.to_api("fake_child_records","foopy_pantz").should == {"fake_child_records" => [{}]}
+          result = @base.to_api("child_records", "other_record")
+          result["child_records"].should == [@child.to_api]
+          result["other_record"].should == @other_record.to_api
         end
-        
-        it "takes array with subhash" do
-          @child.should_receive(:to_api).with("foopy_pantz").and_return({})
-          @base.should_receive(:other_relation).and_return(@other_child)
-          @base.to_api({"fake_child_records" => "foopy_pantz"}, "other_relation").should == {"fake_child_records" => [{}], "other_relation" => {"foo"=>"bar"}}
+
+        it "takes array with subhash and singles" do
+          result = @base.to_api({"child_records" => "category"}, "other_record")
+          result["child_records"].should == [@child.to_api("category")]
+          result["child_records"].first["category"]["name"].should == @child_category.name
+          result["other_record"].should == @other_record.to_api
         end
 
         it "takes array with subhash as symbols" do
-          @child.should_receive(:to_api).with(:foopy_pantz).and_return({})
-          @base.should_receive(:other_relation).and_return(@other_child)
-          @base.to_api({:fake_child_records => :foopy_pantz}, :other_relation).should == {"fake_child_records" => [{}], "other_relation" => {"foo"=>"bar"}}
-        end        
-
-        it "takes array with singles and subhashes" do
-          @child.should_receive(:to_api).with("foopy_pantz").and_return({})
-          @base.to_api("fake_child_records" => "foopy_pantz").should == {"fake_child_records" => [{}]}
+          result = @base.to_api({:child_records => :category}, :other_record)
+          result["child_records"].should == [@child.to_api("category")]
+          result["child_records"].first["category"]["name"].should == @child_category.name
+          result["other_record"].should == @other_record.to_api
         end
       end
 
       describe "#add_to_api_filter" do
         it "adds a filter" do
-          @base = OtherFakeRecord.new
-          @base.should_not_receive(:my_field)
+          @base = FakeRecord.new(:my_field => "foo")
           @base.add_to_api_filter("my_field") do |parent, child_includes|
             "YO-HO-HO"
           end
@@ -292,23 +306,28 @@ describe '#to_api' do
         end
 
         it "sends filter to child" do
-          FakeRecord.stub!(:reflect_on_all_associations => [mock(:name => "kids")])
-          FakeChildRecord.stub!(:reflect_on_all_associations => [mock(:name => "foopy_pantz")])
+          @base = FakeRecord.create
+          @child = @base.child_records.create(:name => "Jane")
 
-          @base = FakeRecord.new
-          @base.stub!(:attributes => {})
-
-          @child = FakeChildRecord.new
-
-          @child.stub!(:foopy_pantz => "pantz of foop")
-          
-          @base.should_receive(:kids).and_return([@child])
-
-          @base.add_to_api_filter("foopy_pantz") do |parent, child_includes|
-            "kachaa"
+          @base.add_to_api_filter("category") do |parent, child_includes|
+            "Not the real category"
           end
 
-          @base.to_api("kids" => "foopy_pantz").should == {"kids" => [{"foopy_pantz" => "kachaa"}]}
+          result = @base.to_api("child_records" => "category")
+          child = result["child_records"].first
+          child["name"].should == @child.name
+          child["category"].should == "Not the real category"
+        end
+
+        it "doesn't blow up when a frozen object gets to_api'd" do
+          models = [FakeRecord.new, FakeRecord.new]
+          models.freeze
+
+          result = models.to_api
+          result.should == [
+            models[0].to_api,
+            models[1].to_api,
+          ]
         end
       end
     end

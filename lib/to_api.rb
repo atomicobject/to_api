@@ -10,7 +10,7 @@ end
 module ToApiInstanceMethods
   def build_to_api_include_hash(*includes)
     include_hash = {}
-    includes.each do |i| 
+    includes.each do |i|
       if i.kind_of?(Hash)
         i.each do |k,v|
           include_hash[k] = v
@@ -34,10 +34,13 @@ module ToApiFilter
   end
 
   def to_api_filters
-    @_to_api_filters ||={}
-    @_to_api_filters
+    if frozen?
+      @_to_api_filters || {}
+    else
+      @_to_api_filters ||= {}
+    end
   end
-end 
+end
 
 if Object.const_defined? :ActiveRecord
 
@@ -47,8 +50,8 @@ if Object.const_defined? :ActiveRecord
     def to_api(*includes) #assumes all attribute types are fine
       hash = {}
       valid_includes = (self.class.reflect_on_all_associations.map(&:name).map(&:to_s) | self.valid_api_includes | self.attributes.keys)
-    
-      include_hash = build_to_api_ar_include_hash(*includes)    
+
+      include_hash = build_to_api_ar_include_hash(*includes)
       include_hash.keys.each do |inc|
         if to_api_filters.has_key?(inc)
           child_includes = include_hash.delete(inc) || []
@@ -62,7 +65,7 @@ if Object.const_defined? :ActiveRecord
           v.to_api_filters = to_api_filters if v.respond_to? :to_api_filters
 
           attribute_includes = include_hash[k] || []
-          to_api_v = v.to_api(*[attribute_includes].flatten.compact) 
+          to_api_v = v.to_api(*[attribute_includes].flatten.compact)
           hash[k] = to_api_v
         end
       end
@@ -76,7 +79,7 @@ if Object.const_defined? :ActiveRecord
           hash[relation.to_s] = api_obj.respond_to?(:to_api) ? api_obj.to_api(*[relation_includes].flatten.compact) : api_obj
         end
       end
-    
+
       hash
     end
 
@@ -92,7 +95,7 @@ if Object.const_defined? :ActiveRecord
     private
     def build_to_api_ar_include_hash(*includes)
       include_hash = {}
-      includes.each do |i| 
+      includes.each do |i|
         if i.kind_of?(Hash)
           i.each do |k,v|
             include_hash[k.to_s] = v
@@ -106,14 +109,16 @@ if Object.const_defined? :ActiveRecord
 
   end
 
-  #Sadly, Scope isn't enumerable
-  class ActiveRecord::NamedScope::Scope
-    include ToApiFilter
-    def to_api(*includes)
-      map{|e|
-        e.to_api_filters = to_api_filters if e.respond_to? :to_api_filters
-        e.to_api(*includes)
-      }
+  if defined?(ActiveRecord::NamedScope)
+    #Sadly, Scope isn't enumerable
+    class ActiveRecord::NamedScope::Scope
+      include ToApiFilter
+      def to_api(*includes)
+        map{|e|
+          e.to_api_filters = to_api_filters if e.respond_to? :to_api_filters
+          e.to_api(*includes)
+        }
+      end
     end
   end
 end
@@ -135,8 +140,8 @@ class Hash
   def to_api(*includes)
     values = {}
 
-    include_hash = build_to_api_include_hash(*includes)    
-    
+    include_hash = build_to_api_include_hash(*includes)
+
     include_hash.keys.each do |inc|
       if to_api_filters.has_key?(inc)
         child_includes = include_hash[inc]
