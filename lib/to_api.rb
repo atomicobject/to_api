@@ -23,6 +23,15 @@ module ToApiInstanceMethods
   end
 end
 
+module ToApiMultiple
+  def to_api(*includes)
+    map{|e|
+      e.to_api_filters = to_api_filters if to_api_filters.any? && e.respond_to?(:to_api_filters)
+      e.to_api(*includes)
+    }
+  end
+end
+
 module ToApiFilter
   def add_to_api_filter(include_name, &block)
     @_to_api_filters ||= {}
@@ -106,33 +115,34 @@ if Object.const_defined? :ActiveRecord
       end
       include_hash
     end
-
   end
-
+ 
   if defined?(ActiveRecord::NamedScope)
     #Sadly, Scope isn't enumerable
     class ActiveRecord::NamedScope::Scope
       include ToApiFilter
-      def to_api(*includes)
-        map{|e|
-          e.to_api_filters = to_api_filters if to_api_filters.any? && e.respond_to?(:to_api_filters)
-          e.to_api_filters = to_api_filters if e.respond_to?(:to_api_filters)
-          e.to_api(*includes)
-        }
-      end
+      include ToApiMultiple
+    end
+  end
+
+  if defined?(ActiveRecord::Associations::CollectionProxy)
+    class ActiveRecord::Associations::CollectionProxy
+      include ToApiFilter
+      include ToApiMultiple
+    end
+  end
+
+  if defined?(ActiveRecord::Relation)
+    class ActiveRecord::Relation
+      include ToApiFilter
+      include ToApiMultiple
     end
   end
 end
 
 class Array
   include ToApiFilter
-  def to_api(*includes)
-    map{|e|
-      e.to_api_filters = to_api_filters if to_api_filters.any? && e.respond_to?(:to_api_filters)
-
-      e.to_api(*includes)
-    }
-  end
+  include ToApiMultiple
 end
 
 class Hash

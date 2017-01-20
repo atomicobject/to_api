@@ -9,7 +9,7 @@ class FakeRecord < ActiveRecord::Base
   if respond_to?(:named_scope)
     named_scope :scopez, :conditions => '1=1'
   else
-    scope :scopez, :conditions => '1=1'
+    scope :scopez, -> { where '1=1' }
   end
 
   attr_accessor :yarg
